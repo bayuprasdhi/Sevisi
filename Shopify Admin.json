@@ -1,0 +1,365 @@
+{
+  "name": "Shopify Admin",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "is:unread"
+        }
+      },
+      "id": "d28b29f3-8cb7-4d70-bb39-9a6d6a03bdfa",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const headers = $input.first().json.payload.headers || [];\nconst subject = headers.find(h => h.name === 'Subject')?.value || '';\nconst fromEmail = headers.find(h => h.name === 'From')?.value || '';\nconst body = $input.first().json.snippet || '';\nconst messageId = $input.first().json.id;\n\nconst emailMatch = fromEmail.match(/<(.+)>/) || [null, fromEmail];\nconst customerEmail = emailMatch[1] ? emailMatch[1].trim() : fromEmail.trim();\n\nlet intent = 'general';\nconst content = (body + ' ' + subject).toLowerCase();\n\nif (content.includes('order') || content.includes('tracking')) {\n  intent = 'order_status';\n} else if (content.includes('product') || content.includes('buy')) {\n  intent = 'product_inquiry';\n} else if (content.includes('problem') || content.includes('issue')) {\n  intent = 'technical_support';\n}\n\nreturn [{\n  messageId: messageId,\n  customerEmail: customerEmail,\n  subject: subject,\n  body: body,\n  intent: intent,\n  originalFrom: fromEmail\n}];"
+      },
+      "id": "555cff02-01b3-4b22-8561-dfab5e699c7c",
+      "name": "Email Parser",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.intent}}",
+              "value2": "order_status"
+            }
+          ]
+        }
+      },
+      "id": "fa2d386e-d4b7-4bea-9b2d-54c50eca8be5",
+      "name": "Check Order Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.intent}}",
+              "value2": "product_inquiry"
+            }
+          ]
+        }
+      },
+      "id": "746f2632-b53c-439c-a3f1-efee1c2b274b",
+      "name": "Check Product Inquiry",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        0,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.intent}}",
+              "value2": "technical_support"
+            }
+          ]
+        }
+      },
+      "id": "07107463-bcec-4df8-8ada-db7f945424d7",
+      "name": "Check Technical Support",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "limit": 5,
+        "options": {}
+      },
+      "id": "780cdd72-33a2-47a7-bffa-3a467e2afd38",
+      "name": "Get Customer Orders",
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "product",
+        "operation": "getAll",
+        "limit": 10,
+        "additionalFields": {}
+      },
+      "id": "f60e995a-2b4e-41e7-bd3a-c8324cf94965",
+      "name": "Get Products",
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.all();\nconst customerData = $node['Email Parser'].json;\nconst customerEmail = customerData.customerEmail;\nconst subject = customerData.subject;\n\nlet response = 'Hi there!\\n\\nThank you for contacting us about your order.\\n\\n';\n\nif (orders.length > 0) {\n  const order = orders[0].json;\n  response += `Here is your order information:\\n\\n`;\n  response += `Order Number: ${order.name}\\n`;\n  response += `Status: ${order.fulfillment_status || 'Processing'}\\n`;\n  response += `Total: ${order.currency} ${order.total_price}\\n\\n`;\n  \n  if (order.fulfillments && order.fulfillments.length > 0) {\n    const fulfillment = order.fulfillments[0];\n    if (fulfillment.tracking_number) {\n      response += `Tracking Number: ${fulfillment.tracking_number}\\n`;\n      response += `Tracking URL: https://www.dhl.com/track?tracking-id=${fulfillment.tracking_number}\\n\\n`;\n    }\n  }\n} else {\n  response += 'I could not find any orders associated with your email address. Please check that you are contacting us from the same email used for your purchase.\\n\\n';\n}\n\nresponse += 'If you have any other questions, please let us know!\\n\\nBest regards,\\nCustomer Support';\n\nreturn [{\n  customerEmail: customerEmail,\n  subject: `Re: ${subject}`,\n  response: response\n}];"
+      },
+      "id": "dbcc2f6d-40b5-4a0e-9ba1-e1d1dc91767f",
+      "name": "Generate Order Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const products = $input.all();\nconst customerData = $node['Email Parser'].json;\nconst customerEmail = customerData.customerEmail;\nconst subject = customerData.subject;\nconst emailBody = customerData.body.toLowerCase();\n\nlet response = 'Hi there!\\n\\nThank you for your interest in our products!\\n\\n';\n\nconst relevantProducts = products.filter(item => {\n  const product = item.json;\n  const title = product.title.toLowerCase();\n  return emailBody.split(' ').some(word => \n    word.length > 3 && title.includes(word)\n  );\n});\n\nif (relevantProducts.length > 0) {\n  response += 'Based on your inquiry, here are some products that might interest you:\\n\\n';\n  relevantProducts.slice(0, 3).forEach(item => {\n    const product = item.json;\n    const price = product.variants && product.variants[0] ? product.variants[0].price : 'Contact for price';\n    response += `${product.title}\\n`;\n    response += `Price: $${price}\\n`;\n    response += `Link: https://yourstore.myshopify.com/products/${product.handle}\\n\\n`;\n  });\n} else {\n  response += 'I would be happy to help you find the right product! Could you provide more details about what you are looking for?\\n\\n';\n}\n\nresponse += 'Feel free to ask if you need more information!\\n\\nBest regards,\\nCustomer Support';\n\nreturn [{\n  customerEmail: customerEmail,\n  subject: `Re: ${subject}`,\n  response: response\n}];"
+      },
+      "id": "679ff474-9add-4eb7-b700-6bff5e415d2b",
+      "name": "Generate Product Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const customerData = $node['Email Parser'].json;\nconst customerEmail = customerData.customerEmail;\nconst subject = customerData.subject;\n\nlet response = 'Hi there!\\n\\nI am sorry to hear you are experiencing an issue. Let me help you resolve this.\\n\\n';\nresponse += 'Here are some quick troubleshooting steps:\\n\\n';\nresponse += '1. Try restarting the device or application\\n';\nresponse += '2. Check all connections and cables\\n';\nresponse += '3. Make sure you have the latest version\\n';\nresponse += '4. Clear cache or temporary files\\n\\n';\nresponse += 'If these steps do not resolve the issue, please reply with:\\n';\nresponse += '• Detailed description of the problem\\n';\nresponse += '• Any error messages\\n';\nresponse += '• When the issue started\\n\\n';\nresponse += 'We are here to help!\\n\\nBest regards,\\nTechnical Support';\n\nreturn [{\n  customerEmail: customerEmail,\n  subject: `Re: ${subject}`,\n  response: response\n}];"
+      },
+      "id": "1cb8eb14-2ac9-4f26-93ad-56fdd417d1dc",
+      "name": "Generate Support Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{$node['Email Parser'].json.messageId}}",
+        "message": "={{$json.response}}",
+        "options": {}
+      },
+      "id": "9ec4a357-b1cc-4b31-af8b-a836ca09457e",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        848,
+        0
+      ],
+      "webhookId": "b355e350-6e5e-4522-9712-3d3a13f9ed84"
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \nhttps://www.upwork.com/jobs/~021960991295752651570"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        848,
+        -432
+      ],
+      "typeVersion": 1,
+      "id": "297ef721-fd91-49aa-a198-779b4661a0f7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "1c34a16c-0e16-4848-ac86-7cb9f36a0183",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Email Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Parser": {
+      "main": [
+        [
+          {
+            "node": "Check Order Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Product Inquiry",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Technical Support",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order Status": {
+      "main": [
+        [
+          {
+            "node": "Get Customer Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Product Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Get Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer Orders": {
+      "main": [
+        [
+          {
+            "node": "Generate Order Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products": {
+      "main": [
+        [
+          {
+            "node": "Generate Product Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Technical Support": {
+      "main": [
+        [
+          {
+            "node": "Generate Support Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Order Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Product Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Support Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "6f0379db-2492-4281-8fff-d738c75b5d54",
+  "meta": {
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "60pKzlH1JCushDQJ",
+  "tags": []
+}

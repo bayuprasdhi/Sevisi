@@ -1,0 +1,331 @@
+{
+  "name": "GHL Sales Lead Follow-Up & Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Get all contacts from the input\nconst contacts = $input.all().map(item => item.json);\n\n// Get the current date and time\nconst now = new Date();\n\n// Filter contacts with no response in the last 24 hours\nconst contactsWithNoResponse = contacts.filter(contact => {\n  const lastResponseTime = new Date(contact.dateUpdated);\n\n  // Calculate the time difference in hours\n  const timeDiff = now - lastResponseTime; \n  const timeDiffInHours = timeDiff / (1000 * 60 * 60);\n\n  // Check if no response in the last 24 hours\n  return timeDiffInHours >= 24; \n});\n\n// Return the filtered contacts as separate items\nreturn contactsWithNoResponse.map(contact => ({\n  json: contact\n}));"
+      },
+      "id": "6285af42-d462-460d-90dc-853899d8486d",
+      "name": "Filter Contacts with No Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        768,
+        96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "5f8b2f26-9f5d-40be-baad-51f65e9eb357",
+      "name": "Fire",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        432,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {},
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "9e35ac7e-8c3c-4821-bbba-a5b5fbf3f8c8",
+      "name": "Get Contact",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        576,
+        240
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "amount": 42
+      },
+      "id": "a41f8e94-b84f-45e4-a968-f3f865b0ec09",
+      "name": "Wait / Pause",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1328,
+        240
+      ],
+      "webhookId": "7475fece-4562-46b3-a702-7a5c5fe88266",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "sendTo": "=newscctv22@gmail.com",
+        "subject": "=Just Checking In - {{ $json.contactName }}",
+        "message": "=<p>Hi {{ $json.firstName || $json.contactName }},</p>\n\n<p>I hope this email finds you well!</p>\n\n<p>I wanted to follow up with you as I noticed we haven't heard back from you in the last {{ $json.hoursAgo }} hours (since {{ $json.dateUpdated }}).</p>\n\n<p>Just checking in to see if you had any questions or if there's anything I can help you with?</p>\n\n<p>Looking forward to hearing from you! Replay to \" yes \" to confirm your Availability</p>\n\n<p>Best regards,<br>\nYour Team</p>",
+        "options": {}
+      },
+      "id": "e70e4622-1756-4e65-a5a2-13ba657be75f",
+      "name": "Follow-Up Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1136,
+        96
+      ],
+      "webhookId": "0c82c299-6938-42ed-bda6-5007d79af34f",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sYN42h0Nq9QSzGWS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all contacts from the input\nconst contacts = $input.all().map(item => item.json);\n\n// Sort contacts by dateUpdated (most recent first)\nconst sortedContacts = contacts.sort((a, b) => {\n  return new Date(b.dateUpdated) - new Date(a.dateUpdated);\n});\n\n// Get the most recent contact\nconst mostRecentContact = sortedContacts[0];\n\n// Calculate hours ago\nconst now = new Date();\nconst lastUpdated = new Date(mostRecentContact.dateUpdated);\nconst timeDiff = now - lastUpdated;\nconst hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));\n\n// Format the output\nconst formattedOutput = `${mostRecentContact.contactName} (${mostRecentContact.email || 'no email'}) - \\`dateUpdated: \"${mostRecentContact.dateUpdated}\"\\`\n* That's ~${hoursAgo} hours ago ✅`;\n\n// Return the formatted output\nreturn [\n  {\n    json: {\n      mostRecentContact: mostRecentContact,\n      formattedOutput: formattedOutput,\n      hoursAgo: hoursAgo,\n      contactName: mostRecentContact.contactName,\n      email: mostRecentContact.email,\n      dateUpdated: mostRecentContact.dateUpdated\n    }\n  }\n];\n"
+      },
+      "id": "971be9a4-415a-4fca-8a70-ed7d528f4d72",
+      "name": "Forwarding Contact",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        960,
+        96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "4a6d1310-29be-4559-8bea-afe8fe0f0f30",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "leftValue": "={{ $json.messages[1].snippet }}",
+              "rightValue": "yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f9c94301-54c7-40e8-b5c0-75146fa7dab1",
+      "name": "Snippet: Yes",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1616,
+        240
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mgnqpGW7DA4smDg3IJr56O2zQw9BGlSiZDbz9uqE8ro",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mgnqpGW7DA4smDg3IJr56O2zQw9BGlSiZDbz9uqE8ro/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mgnqpGW7DA4smDg3IJr56O2zQw9BGlSiZDbz9uqE8ro/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1808,
+        352
+      ],
+      "id": "47084687-a5be-42f3-9f1d-03a5019dfc11",
+      "name": "Rejected / No Response",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zQ9mPbf4mBibicQA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.threadId }}",
+        "options": {}
+      },
+      "id": "cfe934cb-4747-4162-a4c0-e130d013e172",
+      "name": "Checking Response",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1472,
+        240
+      ],
+      "webhookId": "ffb3a844-8c8b-4f17-a6e9-98e0371f4214",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sYN42h0Nq9QSzGWS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "=🎉 *Great News! We Got a Response!*\n\n*Contact:* {{ $json.messages[0].Subject.replace('Just Checking In - ', '') }}\n*Email:* {{ $json.messages[0].To }}\n\n*Their Response:*\n> {{ $json.messages[1].snippet }}\n✅ Follow-up was successful! Time to take next action.",
+        "otherOptions": {}
+      },
+      "id": "a1659ee2-859a-4540-9470-3d0b5a464dbe",
+      "name": "Response: Yes",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        1808,
+        96
+      ],
+      "webhookId": "ddaa7632-9e35-4bd3-82d6-572d5cae84cc",
+      "typeVersion": 2.3
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Filter Contacts with No Response": {
+      "main": [
+        [
+          {
+            "node": "Forwarding Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire": {
+      "main": [
+        [
+          {
+            "node": "Get Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact": {
+      "main": [
+        [
+          {
+            "node": "Filter Contacts with No Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait / Pause": {
+      "main": [
+        [
+          {
+            "node": "Checking Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Email": {
+      "main": [
+        [
+          {
+            "node": "Wait / Pause",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forwarding Contact": {
+      "main": [
+        [
+          {
+            "node": "Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Snippet: Yes": {
+      "main": [
+        [
+          {
+            "node": "Response: Yes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejected / No Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checking Response": {
+      "main": [
+        [
+          {
+            "node": "Snippet: Yes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rejected / No Response": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "0dabf21b-3d30-4c59-be4c-3acff56dde79",
+  "meta": {
+    "templateId": "10152",
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "zIEZRnu0VhVenrcc",
+  "tags": []
+}

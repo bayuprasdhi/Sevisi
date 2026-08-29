@@ -1,0 +1,486 @@
+{
+  "name": "New Lead Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Bahan Baku",
+        "formDescription": "Form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tank",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Silica Sand A1"
+                  },
+                  {
+                    "option": "Silica Sand A2"
+                  },
+                  {
+                    "option": "Silica Sand B1"
+                  },
+                  {
+                    "option": "Silica Sand B2"
+                  },
+                  {
+                    "option": "Soda Ash"
+                  },
+                  {
+                    "option": "Soda Ash C"
+                  },
+                  {
+                    "option": "Dolomite A"
+                  },
+                  {
+                    "option": "Dolomite B"
+                  },
+                  {
+                    "option": "Feldspar A"
+                  },
+                  {
+                    "option": "Feldspar B"
+                  },
+                  {
+                    "option": "Salt Cake"
+                  },
+                  {
+                    "option": "Calumite"
+                  },
+                  {
+                    "option": "Nano3"
+                  },
+                  {
+                    "option": "Nickel"
+                  },
+                  {
+                    "option": "Cobalt"
+                  },
+                  {
+                    "option": "Bluedust"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Sisa Volume Tank",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "KG / Mix",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Mix / Day",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        -32
+      ],
+      "id": "a10ca1e8-188c-49e1-a03b-bb93b5dcf33e",
+      "name": "On form submission",
+      "webhookId": "441dfa5f-006c-4d59-af02-4b70ec99a6d4"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        224
+      ],
+      "id": "ffb1b412-ffbb-4744-b0f2-66bedc760055",
+      "name": "Telegram Trigger",
+      "webhookId": "c9650947-8af4-4fd2-95ae-4160ef705feb",
+      "credentials": {
+        "telegramApi": {
+          "id": "nXuvHo6DCYQiFBxL",
+          "name": "Ruang Trading"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=551648063",
+        "text": "=Konsumsi / Day = {{ $json['Konsumsi / Day'] }} Kg ({{ $json['Konsumsi / Day (Ton)'] }} Ton)\nKonsumsi / Jam = {{ $json['Konsumsi / Jam'] }} Kg ({{ $json['Konsumsi / Jam (Ton)'] }} Ton)\nSisa Umur Tank = {{ $json['Sisa Jam'] }} Jam\nSilahkan berikan spare waktu untuk kendala teknis.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        112
+      ],
+      "id": "17074f6d-7d40-4ba7-865c-99f37b1899b2",
+      "name": "Send a text message",
+      "webhookId": "e61fb30d-88c9-43b1-a47f-d30dd375292d",
+      "credentials": {
+        "telegramApi": {
+          "id": "nXuvHo6DCYQiFBxL",
+          "name": "Ruang Trading"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I",
+          "mode": "list",
+          "cachedResultName": "Sevisi Porto",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Dimas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nama Bahan": "={{ $json.Tank }}",
+            "Input Volume (V%)": "={{ $json['Sisa Volume Tank'] }}%",
+            "KG / Mix": "={{ $json['KG / Mix'] }}",
+            "Mix / Day": "={{ $json['Mix / Day'] }}"
+          },
+          "matchingColumns": [
+            "Nama Bahan"
+          ],
+          "schema": [
+            {
+              "id": "Tank",
+              "displayName": "Tank",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nama Bahan",
+              "displayName": "Nama Bahan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Kapasitas (K)",
+              "displayName": "Kapasitas (K)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Input Volume (V%)",
+              "displayName": "Input Volume (V%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "KG / Mix",
+              "displayName": "KG / Mix",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mix / Day",
+              "displayName": "Mix / Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Konsumsi / Day",
+              "displayName": "Konsumsi / Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Konsumsi / Jam",
+              "displayName": "Konsumsi / Jam",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Konsumsi / Day (Ton)",
+              "displayName": "Konsumsi / Day (Ton)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Konsumsi / Jam (Ton)",
+              "displayName": "Konsumsi / Jam (Ton)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sisa Jam",
+              "displayName": "Sisa Jam",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        176,
+        112
+      ],
+      "id": "27c75b7a-e8c0-46ea-8c89-5d269ef33a63",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zQ9mPbf4mBibicQA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I",
+          "mode": "list",
+          "cachedResultName": "Sevisi Porto",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Dimas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGOTEdNxo97OWLGgRDOWaDSjpvd0E3WZfzJZdNNzu7I/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Nama Bahan",
+              "lookupValue": "={{ $json['Nama Bahan'] }}"
+            }
+          ]
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "FORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        352,
+        112
+      ],
+      "id": "bdaa3a00-06f9-42f6-9d7a-ecc4a641d2c4",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zQ9mPbf4mBibicQA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "K83578232588957"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        112
+      ],
+      "id": "fb10ce7a-d259-47d5-9c89-dd7877181774",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ambil teks dari input\nlet rawText = $input.first().json.ParsedResults[0].ParsedText|| \"\"; // ganti \"text\" sesuai nama field OCR kamu\n\n// Bersihkan karakter aneh\nrawText = rawText\n  .replace(/•/g, \"O\")\n  .replace(/ø/g, \"o\")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\n// Bikin regex untuk ambil data\nconst data = {\n  kantor_cabang: (rawText.match(/Kantor Cabang\\s*:\\s*(.+?)\\s+\\d{1,2}'?\\d{4}/i) || [])[1] || null,\n  tanggal: (rawText.match(/: (\\d{1,2}'\\d{4})/) || [])[1] || null,\n  nomor_kwitansi: (rawText.match(/NOMOR\\s*:\\s*(\\d+)/i) || [])[1] || null,\n  nama_perusahaan: (rawText.match(/NOMOR\\s*:\\s*\\d+\\s+([A-Z ]+)/i) || [])[1] || null,\n  nilai_rupiah: (rawText.match(/Rp\\s*([\\d\\.\\,]+)/i) || [])[1] || null,\n  nilai_terbilang: (rawText.match(/Rp\\s*[\\d\\.\\,]+\\s+([A-Z ]+)/i) || [])[1] || null,\n  bank: (rawText.match(/BANK\\s+([A-Z ]+)/i) || [])[1] || null,\n};\n\nreturn [{ json: data }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        112
+      ],
+      "id": "abd67caf-cd29-4169-bc4b-03771124f427",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "ceb81316-9616-4eaa-aeb4-d5978cbbf8ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "d4DLm3OdTN4XNZ0e",
+  "tags": []
+}

@@ -1,0 +1,422 @@
+{
+  "name": "CV Parsing & Candidate Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "db707185-c1f6-4892-bc38-5788e4252565",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        2704,
+        1536
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "4970d0dc-42f5-4d69-b226-287e98ae1124",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        4096,
+        1408
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "id": "a0c21934-edc4-4cdf-b774-52920976fb44",
+      "name": "Upload CV",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        2704,
+        1712
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "42bb9af7-d748-4b66-89bb-45142d5b076e",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        3520,
+        1808
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f709362f-060e-4309-8b5e-a1994b72e232",
+      "name": "Applicant's Details",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        3024,
+        1536
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "f901e84f-04ee-44b2-ba30-2e891d4ea66c",
+      "name": "Add Applicant's Details in Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        2864,
+        1536
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "88081fa7-51fe-44ae-b51d-d2fd480cc2c2",
+      "name": "Summarize Applicant's Profile",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "position": [
+        3312,
+        1536
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "ec3f1a09-0e5d-4f63-af97-dab9beaa87e1",
+      "name": "Get Job Description from Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        3600,
+        1536
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1a2bbeb0-b8cc-449c-9048-e58ee5ebc6fa",
+      "name": "Summarize Job Role Description",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "position": [
+        3760,
+        1536
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "f361a708-c022-439e-bf96-eb6cbd278120",
+      "name": "Semantic Fit & Evaluation by HR Expert",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        4016,
+        1536
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "42941050-d38f-46a2-81c7-619bd6ea1e9b",
+      "name": "Update Evaluation Results in Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        4304,
+        1536
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "46063d15-c2d1-4cae-88b1-2f6dc9a242f0",
+      "name": "Notify TA for Approval via Email",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [
+        4144,
+        1744
+      ],
+      "webhookId": "6941e6ef-63b6-43f9-8911-32fdd84d13fe",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "802fbb58-5c4c-4f09-9901-211d3c937bb1",
+      "name": "Approval Check - IF Condition",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4304,
+        1744
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4f4a306b-5015-4bb3-86fe-2a44c016c071",
+      "name": "Send Shortlist Email to Candidate",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [
+        4528,
+        1664
+      ],
+      "webhookId": "5b12b59d-c5b3-44b4-8359-e69ce6401120",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e088c818-d7c1-41f6-997b-44049904a691",
+      "name": "Send Rejection Email to Candidate",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [
+        4528,
+        1808
+      ],
+      "webhookId": "5b12b59d-c5b3-44b4-8359-e69ce6401120",
+      "typeVersion": 2.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Applicant's Details",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Summarize Applicant's Profile",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Semantic Fit & Evaluation by HR Expert",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Summarize Job Role Description",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Add Applicant's Details in Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Applicant's Details": {
+      "main": [
+        [
+          {
+            "node": "Summarize Applicant's Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Check - IF Condition": {
+      "main": [
+        [
+          {
+            "node": "Send Shortlist Email to Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Rejection Email to Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Applicant's Profile": {
+      "main": [
+        [
+          {
+            "node": "Get Job Description from Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Job Role Description": {
+      "main": [
+        [
+          {
+            "node": "Semantic Fit & Evaluation by HR Expert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify TA for Approval via Email": {
+      "main": [
+        [
+          {
+            "node": "Approval Check - IF Condition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job Description from Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Summarize Job Role Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Semantic Fit & Evaluation by HR Expert": {
+      "main": [
+        [
+          {
+            "node": "Update Evaluation Results in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Applicant's Details in Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Applicant's Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Evaluation Results in Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Notify TA for Approval via Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload CV": {
+      "main": [
+        [
+          {
+            "node": "Add Applicant's Details in Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "99851188-b149-49f5-81e6-05db5552d27c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "sVfizya5EsIpaXus",
+  "tags": []
+}

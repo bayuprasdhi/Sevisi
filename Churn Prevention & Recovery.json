@@ -1,0 +1,506 @@
+{
+  "name": "Churn Prevention & Recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Slack Announcement\nPosts the summarized client feedback in a Slack channel.  \nNotifies the team in real time and helps track post-service satisfaction trends.\n",
+        "height": 464,
+        "color": 7
+      },
+      "id": "2d7d5b94-4093-4ea7-a1e7-912267eb7e65",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        6896,
+        1168
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        5008,
+        1888
+      ],
+      "id": "51d7ee45-94aa-43f8-8dd5-e27e75752abf",
+      "name": "Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OQkHpHtxHqqopwkV",
+          "name": "Extrade CS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y/edit?usp=drivesdk",
+          "cachedResultName": "Interviewer Brief Pack "
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 1338537721,
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y/edit#gid=1338537721",
+          "cachedResultName": "error log sheet"
+        },
+        "columns": {
+          "value": {},
+          "schema": [
+            {
+              "id": "error_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "error_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "error",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "error_id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "20588f97-199e-43ef-8dca-31a67bc5f0ac",
+      "name": "Record",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        5936,
+        1920
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zQ9mPbf4mBibicQA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y/edit?usp=drivesdk",
+          "cachedResultName": "Interviewer Brief Pack "
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 1338537721,
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uldk_4BxWbdZTDZxFUeohIfeBmGHHqVEl9Ogb0l6R8Y/edit#gid=1338537721",
+          "cachedResultName": "error log sheet"
+        },
+        "columns": {
+          "value": {},
+          "schema": [
+            {
+              "id": "error_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "error_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "error",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "error_id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ffff683e-19d4-469c-a96e-a200a2340486",
+      "name": "Error Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        4832,
+        1968
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zQ9mPbf4mBibicQA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "6a8030ac-5afb-42ea-911a-7b48aacb1930",
+      "name": "Fire",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        4480,
+        1760
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        5648,
+        1984
+      ],
+      "id": "3bf19c4d-4e54-4acd-b1ac-1599e49dfdfc",
+      "name": "Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OQkHpHtxHqqopwkV",
+          "name": "Extrade CS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=newscctv22@gmail.com",
+        "subject": "=Thank You for Working with Techdome .\n",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "a5e1f0be-575f-440b-a6d7-3ebefdd297dc",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        5296,
+        1744
+      ],
+      "webhookId": "0c82c299-6938-42ed-bda6-5007d79af34f",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sYN42h0Nq9QSzGWS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "get",
+        "threadId": "={{ $json.threadId }}",
+        "options": {}
+      },
+      "id": "55e6c9a2-26d3-4017-a52d-1da7daa72f28",
+      "name": "Get Reply",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        5488,
+        1952
+      ],
+      "webhookId": "ffb3a844-8c8b-4f17-a6e9-98e0371f4214",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sYN42h0Nq9QSzGWS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "getAll",
+        "filters": {
+          "status": "won"
+        },
+        "requestOptions": {}
+      },
+      "id": "1963a63e-e351-45b8-9a88-4ad8a3a3b732",
+      "name": "Get Deals",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        4656,
+        1760
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e2adb005-2b3c-4d1e-8445-442df1fe925a",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.id }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "98c88ce6-0efb-4d94-97af-85ff147b3b2c",
+      "name": "Check Deals",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4832,
+        1760
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "list",
+          "value": "U09HMPVD466",
+          "cachedResultName": "newscctv22"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {}
+      },
+      "id": "5b433dff-df44-4056-bcab-dd02e7035c94",
+      "name": "Send to Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        5936,
+        1744
+      ],
+      "webhookId": "ddaa7632-9e35-4bd3-82d6-572d5cae84cc",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant that summarizes client feedback threads for internal Slack updates.\n\nGiven the following Gmail thread JSON:\n{{JSON.stringify($json)}}\n\nCreate a short Slack message in this format:\n\n---\n🎉 *New Client Review Received!*\n\n*Client:* {{ $('Get Deals').item.json.name }}\n*Feedback:* {{ $json.messages[1].snippet }}\n*Sentiment:* {{positive/neutral/negative}}  \n\n\n---\n\nKeep it concise, human-readable, and formatted for Slack (use Markdown formatting). Do not include HTML or JSON — return plain text formatted for Slack.\n",
+        "options": {
+          "systemMessage": "=You are a client-success AI summarizer. \nYour goal is to turn raw Gmail thread data (including “Thank you” replies) into short, clean, Slack-ready summaries. \nFocus on identifying who replied (client name), what they said, and the tone (positive/neutral/negative).\n"
+        }
+      },
+      "id": "b11f49c7-c687-447a-b81f-39b2ecda62f5",
+      "name": "Churn Analyzer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        5648,
+        1840
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate an HTML-formatted review-request email for a client who has just completed a project with our agency.  \nUse the following deal data to personalize the message:\n{{JSON.stringify($json)}}\n\nThe email should:\n1. Address the client by name.  \n2. Thank them for working with our agency.  \n3. Politely ask for their feedback and a quick public review.  \n4. Include two call-to-action buttons:\n   - One leading to the Google Review page: https://share.google/W3i4ulISiqRONADvO  \n   - Another leading to the internal Google Form: https://docs.google.com/forms/d/e/1FAIpQLScot2dbxFrx7jS8oTbQa3HZy9SSUtuB0iYch5U83UNNEwB9_g/viewform?usp=publish-editor  \n5. End with a warm closing line from the Techdome team.  \nKeep the tone professional, grateful, and concise.  \nReturn only the HTML email body—no markdown or explanations.\n",
+        "options": {
+          "systemMessage": "=You are an AI email writer for a client-success automation system.  \nYour task is to generate short, professional, visually clear HTML emails for clients after their project or service is completed.  \nThe tone should be friendly and appreciative, encouraging them to share feedback and public reviews.  \nAlways include clickable buttons styled with simple inline CSS (rounded corners, Techdome blue #1263ff).  \nDo not use markdown, return only HTML output.\n"
+        }
+      },
+      "id": "ee113bcb-5483-4992-b50e-c0822bc6bf0c",
+      "name": "Email Writer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        5008,
+        1744
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "amount": 24
+      },
+      "id": "7b90def4-158c-4485-a0b6-1546997fe10b",
+      "name": "Delay",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        5296,
+        1952
+      ],
+      "webhookId": "7475fece-4562-46b3-a702-7a5c5fe88266",
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire": {
+      "main": [
+        [
+          {
+            "node": "Get Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Churn Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reply": {
+      "main": [
+        [
+          {
+            "node": "Churn Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Deals": {
+      "main": [
+        [
+          {
+            "node": "Check Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Deals": {
+      "main": [
+        [
+          {
+            "node": "Email Writer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Churn Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Writer": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delay": {
+      "main": [
+        [
+          {
+            "node": "Get Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "2868d11a-0d35-408b-9a08-3a55b96f27dc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "xF510C8SEWgjFIg5",
+  "tags": []
+}

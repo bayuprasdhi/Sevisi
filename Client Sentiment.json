@@ -1,0 +1,505 @@
+{
+  "name": "Client Sentiment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "db64331d-f0d3-4f1e-8b0f-c2303bcdb831",
+      "position": [
+        -848,
+        208
+      ],
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "webhookId": "62484054-23f4-4f72-98c3-6a80ee229342"
+    },
+    {
+      "parameters": {
+        "url": "https://api.clearbit.com/v2/combined/find?email={{ $json.body.email }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "HTTP Request (Enrichment)",
+      "id": "4367777a-1da2-4fef-b4a7-d38c84d88327",
+      "position": [
+        -656,
+        208
+      ],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "d8682882-5196-4030-9177-376c2b2aa04d",
+      "position": [
+        -448,
+        208
+      ],
+      "name": "OpenAI (Lead Classifier)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.lead_qualification }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "HOT"
+            },
+            {
+              "value2": "WARM"
+            },
+            {
+              "value2": "COLD"
+            }
+          ]
+        }
+      },
+      "position": [
+        -256,
+        208
+      ],
+      "name": "Switch (Lead Gate)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "id": "2e06402c-9512-4c59-a55f-93c541621f0b"
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "createOrUpdate"
+      },
+      "typeVersion": 1,
+      "name": "HubSpot - Create/Update Contact (HOT)",
+      "type": "n8n-nodes-base.hubspot",
+      "id": "48374b94-3e2c-4d9c-b5fb-222112befd06",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "stage": "Discovery",
+        "additionalFields": {}
+      },
+      "name": "HubSpot - Create Deal (HOT)",
+      "type": "n8n-nodes-base.hubspot",
+      "id": "be265a1b-7e85-4434-856f-15608e0a3012",
+      "position": [
+        208,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": "sales-alerts",
+        "otherOptions": {}
+      },
+      "id": "2335c821-16e4-4376-a9f8-e3578550b8ba",
+      "type": "n8n-nodes-base.slack",
+      "name": "Slack - Notify Sales (HOT)",
+      "position": [
+        400,
+        0
+      ],
+      "typeVersion": 2,
+      "webhookId": "c89aaf46-3b61-455d-9934-5d684d4d4567"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "spreadsheet-id-active-leads",
+        "sheetName": "Active Leads",
+        "columns": {
+          "value": [
+            {
+              "value": "={{ $node[\"Webhook Trigger\"].json.body.firstName }} {{ $node[\"Webhook Trigger\"].json.body.lastName }}",
+              "columnName": "Name"
+            },
+            {
+              "value": "={{ $node[\"Webhook Trigger\"].json.body.email }}",
+              "columnName": "Email"
+            },
+            {
+              "columnName": "Company",
+              "value": "={{ $node[\"Webhook Trigger\"].json.body.companyName }}"
+            },
+            {
+              "value": "HOT",
+              "columnName": "Status"
+            }
+          ],
+          "mappingMode": "defineBelow"
+        },
+        "options": {}
+      },
+      "id": "0eeac949-6f1d-44ab-9db4-eea95acb1cdf",
+      "position": [
+        608,
+        0
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "name": "Google Sheets - Log HOT Lead",
+      "typeVersion": 4
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "createOrUpdate"
+      },
+      "id": "a7338c05-6a25-4720-ae37-313d7bdfbec7",
+      "typeVersion": 1,
+      "name": "HubSpot - Create/Update Contact (WARM)",
+      "type": "n8n-nodes-base.hubspot",
+      "position": [
+        0,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createOrUpdate"
+      },
+      "position": [
+        208,
+        256
+      ],
+      "id": "bfb924b6-8d85-4ce5-9689-b2bd1c4c539e",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.activeCampaign",
+      "name": "ActiveCampaign - Add to Nurturing (WARM)"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "spreadsheet-id-cold-leads",
+        "sheetName": "Cold/Archived Leads",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": [
+            {
+              "value": "={{ $node[\"Webhook Trigger\"].json.body.firstName }} {{ $node[\"Webhook Trigger\"].json.body.lastName }}",
+              "columnName": "Name"
+            },
+            {
+              "columnName": "Email",
+              "value": "={{ $node[\"Webhook Trigger\"].json.body.email }}"
+            },
+            {
+              "columnName": "Status",
+              "value": "COLD"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 4,
+      "type": "n8n-nodes-base.googleSheets",
+      "name": "Google Sheets - Log COLD Lead",
+      "position": [
+        0,
+        512
+      ],
+      "id": "0967a0c1-e8f7-4880-8a87-e3c6e013cef6"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "name": "Merge Paths",
+      "type": "n8n-nodes-base.merge",
+      "id": "0cd49590-20ad-44fb-a4d7-80f19916e792",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1056,
+        128
+      ],
+      "id": "d40f8469-369d-4467-91ed-adaabdb3dfd3",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "nama",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "pesan",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 3.2,
+      "name": "Set Data",
+      "type": "n8n-nodes-base.set",
+      "id": "9e1dab75-9ab6-4763-888b-ac000cc67264",
+      "position": [
+        608,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send"
+      },
+      "name": "Telegram Bot",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        832,
+        384
+      ],
+      "id": "240389ae-b3b6-47bc-803e-7df21c5761e8",
+      "webhookId": "bb729b1a-7e80-4416-97b1-eccf13e31007"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "form-notification",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Trigger1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        384,
+        384
+      ],
+      "id": "69be2f67-a2f2-4c54-99cf-9ddf7fe94c6f",
+      "webhookId": "38729c8d-0c08-47b6-b475-5ab5e58a5fbf"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Data form berhasil diterima dan notifikasi Telegram telah dikirim.\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "position": [
+        1056,
+        384
+      ],
+      "id": "3672f7ba-9bfd-439c-9a0d-90ca042e86cb",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request (Enrichment)": {
+      "main": [
+        [
+          {
+            "node": "OpenAI (Lead Classifier)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ActiveCampaign - Add to Nurturing (WARM)": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI (Lead Classifier)": {
+      "main": [
+        [
+          {
+            "node": "Switch (Lead Gate)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log HOT Lead": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Enrichment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Notify Sales (HOT)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log HOT Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (Lead Gate)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Create/Update Contact (HOT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HubSpot - Create/Update Contact (WARM)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Log COLD Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Paths": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Create/Update Contact (HOT)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Create Deal (HOT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Create Deal (HOT)": {
+      "main": [
+        [
+          {
+            "node": "Slack - Notify Sales (HOT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Create/Update Contact (WARM)": {
+      "main": [
+        [
+          {
+            "node": "ActiveCampaign - Add to Nurturing (WARM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Bot": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Data": {
+      "main": [
+        [
+          {
+            "node": "Telegram Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Set Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "34359f92-68f9-4821-b6cb-7bb5f78ad473",
+  "meta": {
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "ey7sIq9zcWNhZan1",
+  "tags": []
+}

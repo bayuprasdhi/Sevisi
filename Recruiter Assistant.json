@@ -1,0 +1,502 @@
+{
+  "name": "Recruiter Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recruitment-pipeline",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e0758cb0-27ac-4007-9a13-273d3cce3b94",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        640
+      ],
+      "webhookId": "f47b72c1-8675-46e7-b1ab-9c1e97b10b85"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "ingest",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "search",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "notify",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3faf2744-a356-4147-8f30-788df6bc9cc4",
+      "name": "Switch Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        528,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "77e90bc3-b00d-47c0-9f87-16a5eb8b0f66",
+      "name": "Extract Text from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        752,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ekstrak teks CV ini menjadi JSON terstruktur yang berisi field: nama, email, telepon, total_tahun_pengalaman, dan daftar_keahlian. Jangan berikan teks pembuka atau penutup, langsung keluarkan raw JSON objek.\n\nTeks CV:\n{{ $json.text }}",
+        "options": {
+          "systemMessage": "Anda adalah asisten AI perekrutan yang bertugas mengekstrak informasi dari CV secara akurat ke dalam format JSON murni tanpa markdown formatting."
+        }
+      },
+      "id": "f6775049-0923-4ef6-a147-bd62ca37b51a",
+      "name": "AI Agent Ingest",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        976,
+        336
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ba428ebd-e82f-4505-a5e9-df43aa2c827b",
+      "name": "Window Buffer Memory A",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_NAME",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nama": "={{ JSON.parse($json.output).nama }}",
+            "Email": "={{ JSON.parse($json.output).email }}",
+            "Telepon": "={{ JSON.parse($json.output).telepon }}",
+            "Pengalaman": "={{ JSON.parse($json.output).total_tahun_pengalaman }}",
+            "Keahlian": "={{ JSON.parse($json.output).daftar_keahlian.join(', ') }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "69e25c62-bd3a-4989-aec4-55ed1ac46f79",
+      "name": "Google Sheets Append",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1328,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        }
+      },
+      "id": "c5d51b00-85e6-4de2-91ff-763f6d02134b",
+      "name": "Google Sheets Get Many",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        752,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bandingkan kriteria kebutuhan HR ini dengan database pelamar yang disediakan. Pilih maksimal 3 kandidat terbaik, berikan alasan singkat kenapa mereka cocok, dan kembalikan hasilnya dalam format ringkas yang rapi.\n\nKriteria HR:\n{{ $('Switch Router').item.json.body.criteria }}\n\nDatabase Pelamar:\n{{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "Anda adalah asisten rekrutmen profesional yang ahli dalam mencocokkan kriteria pekerjaan dengan profil kandidat."
+        }
+      },
+      "id": "e41c7c9e-e3dd-44b4-b248-aaf5f1db1434",
+      "name": "AI Agent Search",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        1024,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "733f029b-d38c-4665-9566-42def2c02b05",
+      "name": "OpenAI Chat Model B",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        944
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1b6c4e2a-259a-4e4f-9ae3-bc2ee7990d1d",
+      "name": "Window Buffer Memory B",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d93d6558-5850-4757-9a4a-86d6f163bee7",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.status }}",
+              "rightValue": "interview",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8602aa88-443a-4a45-b3cf-a8b725a8f2f0",
+      "name": "If Status Interview",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Switch Router').item.json.body.email }}",
+        "subject": "Undangan Wawancara - {{ $('Switch Router').item.json.body.nama }}",
+        "message": "=Halo {{ $('Switch Router').item.json.body.nama }},\n\nSelamat! Kami sangat terkesan dengan profil Anda dan ingin mengundang Anda untuk mengikuti sesi wawancara.\n\nKami akan segera menghubungi Anda kembali untuk menjadwalkan waktu yang tepat.\n\nSalam hangat,\nTim Rekrutmen",
+        "options": {}
+      },
+      "id": "8c9615eb-0923-4929-81b2-e3b86ee4475a",
+      "name": "Gmail Interview",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        928
+      ],
+      "webhookId": "4a6b7859-be59-4654-b138-1b946608f4b6"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Switch Router').item.json.body.email }}",
+        "subject": "Update Lamaran - {{ $('Switch Router').item.json.body.nama }}",
+        "message": "=Halo {{ $('Switch Router').item.json.body.nama }},\n\nTerima kasih telah melamar dan meluangkan waktu untuk mengikuti proses seleksi di perusahaan kami.\n\nSaat ini kami telah memutuskan untuk melanjutkan dengan kandidat lain yang profilnya lebih sesuai dengan kebutuhan posisi ini. Kami akan tetap menyimpan data Anda di talent pool kami untuk peluang di masa depan.\n\nSemoga sukses dalam perjalanan karir Anda.\n\nSalam hangat,\nTim Rekrutmen",
+        "options": {}
+      },
+      "id": "6d4435af-025b-4f64-9e28-ae076fe5d1a4",
+      "name": "Gmail Rejected",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        1152
+      ],
+      "webhookId": "c7f3cbbc-86cf-4ffa-b629-42496671192a"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        528
+      ],
+      "id": "b50011b0-12ae-4660-be77-f10e68ae8fc3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OQkHpHtxHqqopwkV",
+          "name": "Extrade CS"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Router": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets Get Many",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Status Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Ingest": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Append",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory A": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Ingest",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Get Many": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Search": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model B": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory B": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Search",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Status Interview": {
+      "main": [
+        [
+          {
+            "node": "Gmail Interview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Ingest",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "359e6579-85f8-4781-b44e-8c5f5c7fc7c7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "hUHdDPn1Xg8ngXRX",
+  "tags": []
+}

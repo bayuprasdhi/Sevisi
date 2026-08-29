@@ -1,0 +1,611 @@
+{
+  "name": "Lead Qualification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "formId": "<__PLACEHOLDER_VALUE__Your Typeform Form ID__>"
+      },
+      "id": "d31dd783-6bde-4773-b3d1-c6dd058ac2b0",
+      "name": "Typeform Submission",
+      "type": "n8n-nodes-base.typeformTrigger",
+      "position": [
+        64,
+        816
+      ],
+      "webhookId": "0e86871a-327e-4048-9719-b0002da4356c",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "typeformFormId",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Your Typeform Form ID__>"
+            },
+            {
+              "id": "2",
+              "name": "hotLeadThreshold",
+              "type": "number",
+              "value": 80
+            },
+            {
+              "id": "3",
+              "name": "warmLeadThreshold",
+              "type": "number",
+              "value": 50
+            },
+            {
+              "id": "4",
+              "name": "hotPipelineId",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Hot Pipeline ID from GoHighLevel__>"
+            },
+            {
+              "id": "5",
+              "name": "nurturePipelineId",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Nurture Pipeline ID from GoHighLevel__>"
+            },
+            {
+              "id": "6",
+              "name": "slackChannelName",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Slack channel name (e.g., #sales-alerts)__>"
+            },
+            {
+              "id": "7",
+              "name": "calendlyBookingLink",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Your Calendly booking link__>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0e1f909d-93fe-44f8-a1d5-d368e17a672a",
+      "name": "Configure Variables",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        96,
+        1024
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Score this lead from 0 to 100 based on the following criteria:\n\nBudget: {{ $(\"Typeform Submission\").item.json.budget }}\nTimeline: {{ $(\"Typeform Submission\").item.json.timeline }}\nBusiness Need: {{ $(\"Typeform Submission\").item.json.business_need }}\n\nScoring guidelines:\n- Budget: Higher budget = higher score (0-40 points)\n- Timeline: Urgent timeline = higher score (0-30 points)\n- Business Need: Clear, specific need = higher score (0-30 points)\n\nDetermine qualification tier:\n- \"hot\" if score > 80\n- \"warm\" if score 50-80\n- \"cold\" if score < 50\n\nProvide a brief reason for the score and create a personalized message for the lead.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a lead qualification expert. Analyze leads based on budget, timeline, and business need. Score them from 0-100 and provide structured output with score, qualification tier, reason, and personalized message."
+        }
+      },
+      "id": "467e9280-e4c8-4b4c-8f82-1260e2f4ffa8",
+      "name": "AI Lead Scorer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        304,
+        816
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "b54d33c8-e986-4127-8e0e-9b133557791c",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        304,
+        1024
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": {
+          "score": 85,
+          "reason": "High budget and urgent timeline indicate strong buying intent",
+          "qualification_tier": "hot",
+          "personalized_message": "Based on your budget and timeline, I recommend scheduling a call to discuss our enterprise solution."
+        }
+      },
+      "id": "6f9e87dd-4f5c-4385-9273-5dcbc25d21e5",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        448,
+        1024
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "leftValue": "={{ $json.output.score }}",
+              "rightValue": "={{ $(\"Configure Variables\").item.json.hotLeadThreshold }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a6752563-68ba-4e02-84fd-64e89feb9bf2",
+      "name": "Check Hot Lead",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        592,
+        928
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "email": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "phone": "={{ $(\"Typeform Submission\").item.json.phone }}",
+        "additionalFields": {
+          "firstName": "={{ $(\"Typeform Submission\").item.json.first_name }}",
+          "lastName": "={{ $(\"Typeform Submission\").item.json.last_name }}",
+          "notes": "=AI Score: {{ $(\"AI Lead Scorer\").item.json.output.score }}\nReason: {{ $(\"AI Lead Scorer\").item.json.output.reason }}",
+          "tags": "hot-lead,typeform"
+        },
+        "requestOptions": {}
+      },
+      "id": "0738767a-cc35-441b-bf7a-84443ccc0b86",
+      "name": "Create Hot Lead Contact",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        976,
+        752
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "update",
+        "opportunityId": "={{ $json.id }}",
+        "updateFields": {
+          "pipelineId": "={{ $(\"Configure Variables\").item.json.hotPipelineId }}",
+          "status": "open"
+        },
+        "requestOptions": {}
+      },
+      "id": "759b27d2-b5c9-43e4-a573-5f47c4302c57",
+      "name": "Assign to Hot Pipeline",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        1168,
+        752
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "subject": "=Let's Schedule Your Demo - {{ $(\"Typeform Submission\").item.json.first_name }}",
+        "message": "=<p>Hi {{ $(\"Typeform Submission\").item.json.first_name }},</p>\n\n<p>Thank you for your interest! Based on your requirements, I'd love to schedule a personalized demo with you.</p>\n\n<p><strong>Book your demo here:</strong> <a href=\"{{ $(\"Configure Variables\").item.json.calendlyBookingLink }}\">{{ $(\"Configure Variables\").item.json.calendlyBookingLink }}</a></p>\n\n<p>Looking forward to speaking with you!</p>\n\n<p>Best regards,<br>Sales Team</p>",
+        "options": {}
+      },
+      "id": "204da3ed-b1da-4c15-82ab-58f01fda8e9d",
+      "name": "Send Hot Lead Email with Calendly",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1360,
+        752
+      ],
+      "webhookId": "329a173f-8739-49c0-9d85-23d22b92b204",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $(\"Configure Variables\").item.json.slackChannelName }}"
+        },
+        "messageType": "block",
+        "blocksUi": "=[\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": \"🔥 Hot Lead Alert - Score: {{ $(\"AI Lead Scorer\").item.json.output.score }}\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Name:*\\n{{ $(\"Typeform Submission\").item.json.first_name }} {{ $(\"Typeform Submission\").item.json.last_name }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Email:*\\n{{ $(\"Typeform Submission\").item.json.email }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Budget:*\\n{{ $(\"Typeform Submission\").item.json.budget }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Timeline:*\\n{{ $(\"Typeform Submission\").item.json.timeline }}\"\n      }\n    ]\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*Reason:*\\n{{ $(\"AI Lead Scorer\").item.json.output.reason }}\"\n    }\n  }\n]",
+        "text": "=🔥 Hot Lead Alert",
+        "otherOptions": {}
+      },
+      "id": "7846c907-7ca8-43fb-8b75-f79bc8dddd1a",
+      "name": "Notify Hot Lead on Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        1536,
+        752
+      ],
+      "webhookId": "3803de5e-cc09-4551-8d4d-d841333251b8",
+      "typeVersion": 2.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "leftValue": "={{ $json.output.score }}",
+              "rightValue": "={{ $(\"Configure Variables\").item.json.warmLeadThreshold }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b0fefb73-0797-419f-b04f-69cf1d67ac62",
+      "name": "Check Warm Lead",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        784,
+        944
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "email": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "phone": "={{ $(\"Typeform Submission\").item.json.phone }}",
+        "additionalFields": {
+          "firstName": "={{ $(\"Typeform Submission\").item.json.first_name }}",
+          "lastName": "={{ $(\"Typeform Submission\").item.json.last_name }}",
+          "notes": "=AI Score: {{ $(\"AI Lead Scorer\").item.json.output.score }}\nReason: {{ $(\"AI Lead Scorer\").item.json.output.reason }}",
+          "tags": "warm-lead,typeform"
+        },
+        "requestOptions": {}
+      },
+      "id": "f2952287-e264-400a-9a8c-8bbb18a2c391",
+      "name": "Create Warm Lead Contact",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        976,
+        928
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "update",
+        "opportunityId": "={{ $json.id }}",
+        "updateFields": {
+          "pipelineId": "={{ $(\"Configure Variables\").item.json.nurturePipelineId }}",
+          "status": "open"
+        },
+        "requestOptions": {}
+      },
+      "id": "f03f42bd-7db8-41cc-86df-a14f06121e28",
+      "name": "Assign to Nurture Pipeline",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        1168,
+        928
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "subject": "=Thank You for Your Interest - {{ $(\"Typeform Submission\").item.json.first_name }}",
+        "message": "=<p>Hi {{ $(\"Typeform Submission\").item.json.first_name }},</p>\n\n<p>{{ $(\"AI Lead Scorer\").item.json.output.personalized_message }}</p>\n\n<p>I'll follow up with you in a couple of days with more information tailored to your needs.</p>\n\n<p>Best regards,<br>Sales Team</p>",
+        "options": {}
+      },
+      "id": "a5ffd11b-8c31-4448-9001-c20160c4247b",
+      "name": "Send Warm Lead Personalized Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1360,
+        928
+      ],
+      "webhookId": "d5d21cfa-4eb4-49cc-b0b1-abf21a290bf1",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "amount": 48,
+        "unit": "hours"
+      },
+      "id": "abd442f5-3799-4cff-bea3-a0b03f61daa2",
+      "name": "Wait 48 Hours",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1536,
+        928
+      ],
+      "webhookId": "1ac46ec2-32b9-4543-baea-a29640288e42",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "subject": "=Following Up - {{ $(\"Typeform Submission\").item.json.first_name }}",
+        "message": "=<p>Hi {{ $(\"Typeform Submission\").item.json.first_name }},</p>\n\n<p>I wanted to follow up on my previous email. Have you had a chance to review our solution?</p>\n\n<p>I'd be happy to answer any questions you might have or schedule a brief call to discuss how we can help with {{ $(\"Typeform Submission\").item.json.business_need }}.</p>\n\n<p>Best regards,<br>Sales Team</p>",
+        "options": {}
+      },
+      "id": "e777f1b0-ca43-472e-b663-6dda975dda5d",
+      "name": "Send Warm Lead Follow-Up Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1712,
+        928
+      ],
+      "webhookId": "544f5406-7bc6-49d4-913a-708837d947bd",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "email": "={{ $(\"Typeform Submission\").item.json.email }}",
+        "phone": "={{ $(\"Typeform Submission\").item.json.phone }}",
+        "additionalFields": {
+          "firstName": "={{ $(\"Typeform Submission\").item.json.first_name }}",
+          "lastName": "={{ $(\"Typeform Submission\").item.json.last_name }}",
+          "notes": "=AI Score: {{ $(\"AI Lead Scorer\").item.json.output.score }}\nReason: {{ $(\"AI Lead Scorer\").item.json.output.reason }}",
+          "tags": "cold-lead,typeform"
+        },
+        "requestOptions": {}
+      },
+      "id": "2cf7a7e0-577a-48f2-96d3-ac439c52dd13",
+      "name": "Create Cold Lead Contact",
+      "type": "n8n-nodes-base.highLevel",
+      "position": [
+        976,
+        1120
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $(\"Configure Variables\").item.json.slackChannelName }}"
+        },
+        "messageType": "block",
+        "blocksUi": "=[\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": \"❄️ Cold Lead - Score: {{ $(\"AI Lead Scorer\").item.json.output.score }}\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Name:*\\n{{ $(\"Typeform Submission\").item.json.first_name }} {{ $(\"Typeform Submission\").item.json.last_name }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Email:*\\n{{ $(\"Typeform Submission\").item.json.email }}\"\n      }\n    ]\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*Reason:*\\n{{ $(\"AI Lead Scorer\").item.json.output.reason }}\"\n    }\n  }\n]",
+        "text": "=❄️ Cold Lead Notification",
+        "otherOptions": {}
+      },
+      "id": "3d71b692-0564-4bd9-a56c-c705e8985818",
+      "name": "Notify Cold Lead on Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        1168,
+        1120
+      ],
+      "webhookId": "3232e819-391b-4b0e-87bd-2863d89873ec",
+      "typeVersion": 2.4
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Scorer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 48 Hours": {
+      "main": [
+        [
+          {
+            "node": "Send Warm Lead Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Scorer": {
+      "main": [
+        [
+          {
+            "node": "Check Hot Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Hot Lead": {
+      "main": [
+        [
+          {
+            "node": "Create Hot Lead Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Warm Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Warm Lead": {
+      "main": [
+        [
+          {
+            "node": "Create Warm Lead Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Cold Lead Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure Variables": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Scorer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typeform Submission": {
+      "main": [
+        [
+          {
+            "node": "Configure Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign to Hot Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Send Hot Lead Email with Calendly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Hot Lead Contact": {
+      "main": [
+        [
+          {
+            "node": "Assign to Hot Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Cold Lead Contact": {
+      "main": [
+        [
+          {
+            "node": "Notify Cold Lead on Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Warm Lead Contact": {
+      "main": [
+        [
+          {
+            "node": "Assign to Nurture Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Lead Scorer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign to Nurture Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Send Warm Lead Personalized Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Hot Lead Email with Calendly": {
+      "main": [
+        [
+          {
+            "node": "Notify Hot Lead on Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Warm Lead Personalized Email": {
+      "main": [
+        [
+          {
+            "node": "Wait 48 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "b076b6d2-3aaa-460a-b167-0276b5f9692a",
+  "meta": {
+    "instanceId": "2693efedbf3b38aae05c3baf6d26263b30d602a7d900de6ac67d3682e6602caf"
+  },
+  "nodeGroups": [],
+  "id": "3DOJLA5mumP0FlKb",
+  "tags": []
+}
